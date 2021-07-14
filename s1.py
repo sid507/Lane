@@ -1,15 +1,4 @@
-##import cv2
-##import numpy as np
-##def mouse(event,x,y,flags,params):
-##    if event==cv2.EVENT_LBUTTONDOWN:
-##        print(x,y)
-##img=cv2.imread('final.png')
-##r,c,p=img.shape
 
-##cv2.namedWindow('frame')
-##cv2.setMouseCallback('frame',mouse)
-##mask2=cv2.bitwise_and(img,img,mask=mask2)
-##cv2.imshow('frame',mask2)
 import numpy as np
 import cv2
 import array
@@ -17,9 +6,20 @@ import tkinter as tk
 global img
 global arr
 arr=array.array('i',[])
+font = cv2.FONT_HERSHEY_SIMPLEX
+  
+# org
+org = (45,115)
+  
+# fontScale
+fontScale = 1
+   
+# Blue color in BGR
+color = (255, 0, 0)
+  
+# Line thickness of 2 px
+thickness = 2
 
-
-##cv2.imshow('f',img)
 def mouse(event ,x,y,flags,params):
     
     if event==cv2.EVENT_LBUTTONDOWN:
@@ -45,6 +45,9 @@ while True:
     mask2=np.zeros((r,c),np.uint8)
     mask3=np.zeros((r,c),np.uint8)
     mask4=np.zeros((r,c),np.uint8)
+
+    ##mask1 is to capture the left part of road
+    ##mask2 is to capture right part of road
     for i in range(176,308):
         for j in range(556):
             mask1[i][j]=255
@@ -53,6 +56,7 @@ while True:
         for j in range(840,c):
             mask2[i][j]=255
             mask4[i][j]=255
+    
     
     
 
@@ -64,17 +68,21 @@ while True:
     while True:
         cv2.imshow('frame',img)
         img=img2.copy()
+        ##Drawing rectangle
         for i in range(len(arr)//2):
             cv2.rectangle(img,(arr[2*i],arr[2*i+1]),(arr[2*i]+50,arr[2*i+1]+25),(255,0,0),-1)
+
+        ##Used for red color and green color 
         if tt-time>0.5:
             cv2.circle(img,(884,149),8,(0,255,0),-1)
             cv2.circle(img,(532,478),8,(0,0,255),-1)
+        ## Used for orange color
         elif tt-time<=0.5 and tt-time>0:
             cv2.circle(img,(884,149),8,(0,165,255),-1)
             cv2.circle(img,(532,478),8,(0,165,255),-1)
         cv2.waitKey(10)
         time=time+0.01
-        
+        ##Incrementing the car coordinates 
         for i in range(len(arr)-1):
             if(arr[i+1]>176 and arr[i+1]<315 and i%2==0):
                 x=arr[i]
@@ -84,14 +92,22 @@ while True:
                 arr[i]=x-2
         if time>tt:
             break
+    ##Capturing the left part of road using bitwise and operation
     im=cv2.bitwise_and(img,img,mask=mask1)
+    
+    ##Taking negative
     im=cv2.bitwise_not(im)
+   
+
+    ##Convert into BW 
     im=cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+    ##Applying threshold
     _,th=cv2.threshold(im,160,255,cv2.THRESH_BINARY)
+    
     th=cv2.bitwise_and(th,th,mask=(mask3))
     mask3,contour=cv2.findContours(th,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     cv2.drawContours(img,mask3,-1,(0,255,0),3)
-    
+    ##cv2.imshow('sid',img)
     area1=0
     for j in range(len(mask3)):
         area1=area1+cv2.contourArea(mask3[j])
@@ -109,18 +125,23 @@ while True:
         area2=area2+cv2.contourArea(mask4[j])
     density2=area2/733
     print(density2)
-##    cv2.imshow('frame',th)
     if(density1<density2):
         density1=density2
     density1=(density1*100)/733
     print("density")
     print(density1)
     if(density1>0.9):
-        cv2.waitKey(3000)
+        img=cv2.putText(img,'Density: '+str(max(density1,density2)),org,font,fontScale, color, thickness, cv2.LINE_AA)
+        ##cv2.waitKey(9000)
+        tt=5
     elif(density1>0.5 and density1<0.9):
-        cv2.waitKey(2000)
+        img=cv2.putText(img,'Density: '+str(max(density1,density2)),org,font,fontScale, color, thickness, cv2.LINE_AA)
+        tt=3
+        ##cv2.waitKey(5000)
     else:
-        cv2.waitKey(400)
+        img=cv2.putText(img,'Density: '+str(max(density1,density2)),org,font,fontScale, color, thickness, cv2.LINE_AA)
+        tt=1
+        ##cv2.waitKey(2000)
         
     
 
@@ -143,6 +164,7 @@ while True:
         p=ar2[i]
         arr.remove(ar2[i])
     img=cv2.imread('final.png')
+    img=cv2.putText(img,'Density: '+str(max(density1,density2)),org,font,fontScale, color, thickness, cv2.LINE_AA)
     for i in range(len(arr)//2):
             cv2.rectangle(img,(arr[2*i],arr[2*i+1]),(arr[2*i]+50,arr[2*i+1]+25),(255,0,0),-1)
     cv2.circle(img,(884,149),8,(0,0,255),-1)
